@@ -1,0 +1,47 @@
+<div class="recuperar-container">
+  <div class="recuperar-card">
+    <h2>Recuperar Contraseña</h2>
+    <p class="descripcion">
+      Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+    </p>
+
+    <!-- Mensajes de Feedback -->
+    <div *ngIf="mensajeExito()" class="alert alert-success">
+      {{ mensajeExito() }}
+    </div>
+
+    <div *ngIf="mensajeError()" class="alert alert-danger">
+      {{ mensajeError() }}
+    </div>
+
+    <!-- Formulario -->
+    <form [formGroup]="recuperarForm" (ngSubmit)="enviarSolicitud()" *ngIf="!mensajeExito()">
+      <div class="form-group">
+        <label for="email">Correo Electrónico</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="ejemplo@correo.com"
+          [class.is-invalid]="recuperarForm.get('email')?.touched && recuperarForm.get('email')?.invalid"
+        />
+
+        <!-- Validaciones visuales -->
+        <div class="error-message" *ngIf="recuperarForm.get('email')?.touched && recuperarForm.get('email')?.errors?.['required']">
+          El correo electrónico es obligatorio.
+        </div>
+        <div class="error-message" *ngIf="recuperarForm.get('email')?.touched && recuperarForm.get('email')?.errors?.['email']">
+          Por favor, introduce un formato de correo válido.
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="cargando() || recuperarForm.invalid" class="btn-enviar">
+        {{ cargando() ? 'Enviando...' : 'Enviar Enlace' }}
+      </button>
+    </form>
+
+    <div class="acciones-pie">
+      <a routerLink="/login" class="btn-regresar">Volver al Inicio de Sesión</a>
+    </div>
+  </div>
+</div>

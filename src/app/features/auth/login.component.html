@@ -1,0 +1,88 @@
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+  <div class="card shadow-lg border-0 rounded-3" style="width: 100%; max-width: 420px;">
+    <div class="card-body p-5">
+
+      <!-- Encabezado -->
+      <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary">Control de Acceso</h2>
+        <p class="text-muted small">Ingresa tus credenciales para continuar</p>
+      </div>
+
+      <!-- 🌟 Alerta de Error del Backend (Spring Boot / SQLite) -->
+      @if (errorMensaje()) {
+      <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div class="small fw-semibold">{{ errorMensaje() }}</div>
+        <button type="button" class="btn-close small" (click)="errorMensaje.set(null)" aria-label="Close"></button>
+      </div>
+      }
+
+      <!-- Formulario -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+        <!-- Input Usuario -->
+        <div class="mb-3">
+          <label for="userId" class="form-label fw-semibold text-secondary small">ID de Usuario</label>
+          <input
+            type="text"
+            id="userId"
+
+            formControlName="userId"
+            class="form-control form-control-lg"
+            placeholder="Ej. admin01"
+            [class.is-invalid]="esCampoInvalido('userId')"
+          />
+          @if (esCampoInvalido('userId')) {
+          <div class="invalid-feedback small">
+            @if (loginForm.get('userId')?.hasError('required')) { El ID de usuario es obligatorio. }
+            @if (loginForm.get('userId')?.hasError('minlength')) { Debe tener al menos 3 caracteres. }
+          </div>
+          }
+        </div>
+
+        <!-- Input Contraseña -->
+        <div class="mb-4">
+          <label for="password" class="form-label fw-semibold text-secondary small">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+
+            formControlName="password"
+            class="form-control form-control-lg"
+            placeholder="••••••••"
+            [class.is-invalid]="esCampoInvalido('password')"
+          />
+          @if (esCampoInvalido('password')) {
+          <div class="invalid-feedback small">
+            @if (loginForm.get('password')?.hasError('required')) { La contraseña es obligatoria. }
+            @if (loginForm.get('password')?.hasError('minlength')) { Debe tener al menos 4 caracteres. }
+          </div>
+          }
+        </div>
+
+        <!-- Botón de Envío Dinámico -->
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg w-100 fw-bold shadow-sm d-flex justify-content-center align-items-center"
+          [disabled]="cargando()"
+        >
+          @if (cargando()) {
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          <span>Verificando...</span>
+          } @else {
+          <span>Iniciar Sesión</span>
+          }
+        </button>
+
+      </form>
+      <br>
+      <br>
+      <div class="opciones-formulario">
+        <!-- Enlace reactivo que redirige limpiamente sin recargar la página -->
+        <a routerLink="/recuperar" class="link-recuperar">
+          ¿Olvidaste tu contraseña?
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>

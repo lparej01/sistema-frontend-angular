@@ -1,0 +1,225 @@
+<div class="container-fluid py-3 animate__animated animate__fadeIn">
+
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Módulo de Categorías</h2>
+      <p class="text-muted small mb-0">Control financiero, precios y estados operativos en SQLite</p>
+    </div>
+    <!-- Botón visible para todos, controlado por permisos en el click o deshabilitado si lo deseas -->
+    <button (click)="abrirModalCrear()" class="btn btn-primary d-flex align-items-center gap-2 rounded-3 shadow-sm">
+      <i class="bi bi-tag-fill"></i>
+      <span>Nueva Categoría</span>
+    </button>
+  </div>
+
+  @if (errorMensaje()) {
+  <div class="alert alert-danger border-0 rounded-3 small shadow-sm mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMensaje() }}
+  </div>
+  }
+
+  <!-- Tabla Estilizada -->
+  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark text-uppercase" style="font-size: 0.75rem;">
+        <tr>
+          <th class="ps-4 py-3">ID (catId)</th>
+          <th class="py-3">Categoría</th>
+          <th class="py-3">Costo Unitario</th>
+          <th class="py-3">Precio Venta</th>
+          <th class="py-3">Kg - Litros</th>
+          <th class="py-3">Modificado Por</th>
+          <th class="py-3">Estado</th>
+          <th class="text-end pe-4 py-3">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (cat of categorias(); track cat.catId) {
+        <tr>
+          <td class="ps-4 fw-bold text-secondary">#{{cat.catId}}</td>
+          <td class="fw-semibold text-dark">{{cat.categoria}}</td>
+          <td class="text-success fw-semibold">${{cat.costoUnitario | number:'1.2-2'}}</td>
+          <td class="text-primary fw-bold">${{cat.precio | number:'1.2-2'}}</td>
+          <td><i class="bi bi-box-seam me-1 text-muted"></i>{{cat.peso}}</td>
+          <td>
+                <span class="badge bg-light text-dark border border-secondary border-opacity-25">
+                  <i class="bi bi-person me-1"></i>{{cat.usuario}}
+                </span>
+          </td>
+          <td>
+                <span class="badge" [ngClass]="cat.activo === 1 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+                  {{cat.activo === 1 ? 'Activo' : 'Inactivo'}}
+                </span>
+          </td>
+          <td class="text-end pe-4">
+            <div class="d-inline-flex gap-2">
+              <button (click)="abrirModalEditar(cat)" class="btn btn-sm btn-outline-warning border-0" title="Editar Categoría"><i class="bi bi-pencil-square fs-5"></i></button>
+
+              <!-- 🔒 CONTROL VISUAL: Solo el rol ADMIN_ROLE puede ver/usar el botón eliminar según tu @PreAuthorize -->
+             <!-- @if (authService.currentRole() === 'ADMIN_ROLE') {
+              <button (click)="onEliminar(cat.catId!)" class="btn btn-sm btn-outline-danger border-0" title="Eliminar de SQLite"><i class="bi bi-trash3-fill fs-5"></i></button>
+              }-->
+            </div>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="8" class="text-center py-4 text-muted small">No se encontraron categorías registradas en la base de datos.</td>
+        </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 📋 MODAL FLOTANTE (CREAR / EDITAR CATEGORÍA) -->
+<!-- CÓDIGO DE TU TABLA PRINCIPAL (Se mantiene igual a como lo tienes) -->
+
+<!-- 🌟 MODAL MANEJADO POR TU SIGNAL (Muestra u oculta con clases CSS) -->
+<div class="modal fade" [class.show]="mostrarModal()" [style.display]="mostrarModal() ? 'block' : 'none'" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold">
+          {{ modoEdicion() ? 'Editar Categoría' : 'Nueva Categoría' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()" [disabled]="cargando()"></button>
+      </div>
+
+      <div class="modal-body p-4">
+
+        <!-- Alerta de Errores Reales del Backend sin molestar con alerts nativos -->
+        @if (errorMensaje()) {
+        <div class="alert alert-danger d-flex align-items-center mb-3 small fw-semibold" role="alert">
+          <i class="bi bi-exclamation-octagon-fill me-2"></i>
+          <div>{{ errorMensaje() }}</div>
+        </div>
+        }
+
+        <!-- Formulario Atómico Enlazado con ngForm -->
+        <form #miFormulario="ngForm" (ngSubmit)="guardarFormulario(miFormulario)" novalidate>
+
+          <!-- Input Nombre de Categoría -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-secondary small">Nombre de Categoría</label>
+            <input
+              type="text"
+              name="categoria"
+              [(ngModel)]="categoriaFormulario.categoria"
+              #inputCat="ngModel"
+              required
+              minlength="3"
+              class="form-control"
+              placeholder="Ej. Bebidas Carbonatadas"
+              [class.is-invalid]="inputCat.invalid && (inputCat.dirty || inputCat.touched)"
+            />
+            @if (inputCat.invalid && (inputCat.dirty || inputCat.touched)) {
+            <div class="invalid-feedback small">
+              @if (inputCat.errors?.['required']) { El nombre de la categoría es obligatorio. }
+              @if (inputCat.errors?.['minlength']) { Debe contener al menos 3 caracteres. }
+            </div>
+            }
+          </div>
+
+          <!-- Fila de Contabilidad: Costo y Precio -->
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold text-secondary small">Costo Unitario</label>
+              <input
+                type="number"
+                name="costoUnitario"
+                [disabled]="!modoEdicion()"
+                [(ngModel)]="categoriaFormulario.costoUnitario"
+                #inputCosto="ngModel"
+                required
+                min="0"
+                class="form-control"
+                [class.is-invalid]="inputCosto.invalid && (inputCosto.dirty || inputCosto.touched)"
+              />
+              @if (!modoEdicion()) {
+              <div class="form-text text-muted small">
+                <i class="bi bi-info-circle"></i> Se habilita solo en modo edición.
+              </div>
+              }
+              @if (inputCosto.invalid && (inputCosto.dirty || inputCosto.touched)) {
+              <div class="invalid-feedback small">El costo debe ser mayor o igual a 0.</div>
+              }
+            </div>
+
+            <div class="col-6">
+              <label class="form-label fw-semibold text-secondary small">Precio</label>
+              <input
+                type="number"
+                name="precio"
+                [(ngModel)]="categoriaFormulario.precio"
+                #inputPrecio="ngModel"
+                required
+                min="0"
+                class="form-control"
+                [class.is-invalid]="inputPrecio.invalid && (inputPrecio.dirty || inputPrecio.touched)"
+              />
+              @if (inputPrecio.invalid && (inputPrecio.dirty || inputPrecio.touched)) {
+              <div class="invalid-feedback small">El precio debe ser mayor o igual a 0.</div>
+              }
+            </div>
+          </div>
+
+          <!-- Fila de Peso y Estado Activo -->
+          <div class="row mb-4">
+            <div class="col-6">
+              <label class="form-label fw-semibold text-secondary small">Peso- Volumen</label>
+              <input
+                type="number"
+                name="peso"
+                [(ngModel)]="categoriaFormulario.peso"
+                #inputPeso="ngModel"
+                required
+                min="0"
+                class="form-control"
+                [class.is-invalid]="inputPeso.invalid && (inputPeso.dirty || inputPeso.touched)"
+              />
+              @if (inputPeso.invalid && (inputPeso.dirty || inputPeso.touched)) {
+              <div class="invalid-feedback small">El peso debe ser mayor o igual a 0.</div>
+              }
+            </div>
+
+            <div class="col-6">
+              <label class="form-label fw-semibold text-secondary small">Estado en SQLite</label>
+              <select
+                name="activo"
+                [(ngModel)]="categoriaFormulario.activo"
+                class="form-select"
+              >
+                <option [ngValue]="1">Activo</option>
+                <option [ngValue]="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Botonera de Control -->
+          <div class="modal-footer px-0 pb-0 pt-3 border-top-0 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary fw-semibold" (click)="cerrarModal()" [disabled]="cargando()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm" [disabled]="cargando()">
+              @if (cargando()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              <span>Guardando...</span>
+              } @else {
+              <span>{{ modoEdicion() ? 'Actualizar' : 'Registrar' }}</span>
+              }
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+

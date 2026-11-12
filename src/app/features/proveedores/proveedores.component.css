@@ -1,0 +1,14 @@
+
+
+/* Estilos extra para pulir la visualización de tus datos históricos */
+.text-mini {
+  font-size: 0.75rem;
+}
+.sticky-top {
+  background-color: #f8f9fa !important;
+  z-index: 1020;
+}
+.table-responsive {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+}

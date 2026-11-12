@@ -1,0 +1,276 @@
+<div class="container-fluid mt-4">
+
+  <!-- ========================================== -->
+  <!-- ENCABEZADO Y BUSCADOR REACTIVO            -->
+  <!-- ========================================== -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body bg-white">
+      <div class="row align-items-center g-3">
+        <div class="col-md-6">
+          <h4 class="text-primary mb-0 fw-bold">
+            <i class="bi bi-box-seam me-2"></i>Gestión de SKU
+          </h4>
+        </div>
+        <div class="col-md-4">
+          <!-- Input conectado al método onBuscar() -->
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control"
+                   placeholder="Buscar SKU por descripción..."
+                   (input)="onBuscar($event)">
+          </div>
+        </div>
+        <div class="col-md-2 text-md-end">
+          <button class="btn btn-success fw-bold w-100" (click)="abrirModalCrear()">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo SKU
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTA DE ERROR (SI EXISTE) -->
+  @if (errorMensaje()) {
+  <div class="alert alert-danger shadow-sm d-flex align-items-center" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div>{{ errorMensaje() }}</div>
+  </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- TABLA DE CONSULTA DE DATOS                 -->
+  <!-- ========================================== -->
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 bg-white">
+        <thead class="table-dark">
+        <tr>
+          <th style="width: 80px;">ID SKU</th>
+          <th>Descripción</th>
+          <th>Categoría</th>
+          <th>Marca</th>
+          <th class="text-end">Costo Unitario</th>
+          <th class="text-center">Presentación</th>
+          <th class="text-center">Empaque</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center" style="width: 120px;">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (item of skusPaginados(); track item.sku) {
+        <tr>
+          <td class="fw-bold text-secondary">#{{ item.sku }}</td>
+          <td><span class="fw-semibold text-dark">{{ item.descripcion }}</span></td>
+          <td>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2">
+                  {{ ($any(item).categoria)?.categoria || 'Sin Categoría' }}
+                </span>
+          </td>
+          <td>{{ item.marca || 'Genérico' }}</td>
+          <td class="text-end fw-bold text-success">${{ item.costoUnitario | number:'1.2-2' }}</td>
+          <td class="text-center">{{ item.presentacion }} {{ item.unidadMedida }}</td>
+          <td class="text-center"><span class="badge bg-light text-dark">x{{ item.empaque }}</span></td>
+          <td class="text-center">
+            @if (item.activo === 1) {
+            <span class="badge bg-success-subtle text-success fw-bold px-2.5 py-1">Activo</span>
+            } @else {
+            <span class="badge bg-danger-subtle text-danger fw-bold px-2.5 py-1">Inactivo</span>
+            }
+          </td>
+          <td class="text-center">
+            <div class="btn-group">
+              <button class="btn btn-outline-warning btn-sm" (click)="abrirModalEditar(item)" title="Editar">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+            <!--  <button class="btn btn-outline-danger btn-sm" (click)="onEliminar(item.sku)" title="Eliminar">
+                <i class="bi bi-trash3-fill"></i>
+              </button>-->
+            </div>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="9" class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            No hay SKU que coincidan con los filtros aplicados.
+          </td>
+        </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SECCIÓN DE CONTROLES DE PAGINACIÓN          -->
+  <!-- ========================================== -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center bg-white p-3 rounded shadow-sm border mb-4">
+    <div class="mb-3 mb-sm-0 text-secondary small">
+      Mostrar
+      <select class="form-select form-select-sm d-inline-block mx-1" style="width: auto;"
+              (change)="cambiarTamanoPagina($event)">
+        <option [value]="5" [selected]="articulosPorPagina() === 5">5</option>
+        <option [value]="10" [selected]="articulosPorPagina() === 10">10</option>
+        <option [value]="25" [selected]="articulosPorPagina() === 25">25</option>
+        <option [value]="50" [selected]="articulosPorPagina() === 50">50</option>
+      </select>
+      registros de un total de <strong>{{ skusFiltrados().length }}</strong> disponibles.
+    </div>
+
+    <nav aria-label="Navegación de tabla de sku">
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item" [class.disabled]="paginaActual() === 1">
+          <button type="button" class="page-link shadow-none" (click)="cambiarPagina(paginaActual() - 1)">
+            <i class="bi bi-chevron-left"></i> Anterior
+          </button>
+        </li>
+        <li class="page-item disabled">
+          <span class="page-link text-dark fw-bold px-3 bg-light">
+            Página {{ paginaActual() }} de {{ totalPaginas() }}
+          </span>
+        </li>
+        <li class="page-item" [class.disabled]="paginaActual() === totalPaginas()">
+          <button type="button" class="page-link shadow-none" (click)="cambiarPagina(paginaActual() + 1)">
+            Siguiente <i class="bi bi-chevron-right"></i>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL FLOTANTE COMPLETAMENTE CERRADO       -->
+  <!-- ========================================== -->
+  @if (mostrarModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content shadow-lg border-0">
+
+        <!-- Cabecera del modal -->
+        <div class="modal-header text-white" [ngClass]="modoEdicion() ? 'bg-warning text-dark' : 'bg-success'">
+          <h5 class="modal-title fw-bold">
+            <i class="bi me-2" [ngClass]="modoEdicion() ? 'bi-pencil-square' : 'bi-plus-circle-fill'"></i>
+            {{ modoEdicion() ? 'Modificar Registro SKU #' + skuFormulario.sku: 'Registrar Nuevo SKU en Sistema' }}
+          </h5>
+          <button type="button" class="btn-close" [class.btn-close-white]="!modoEdicion()" (click)="cerrarModal()"></button>
+        </div>
+
+        <!-- Formulario -->
+        <form (ngSubmit)="guardarFormulario()" #skuForm="ngForm" novalidate>
+
+          <!-- Contenedor del Cuerpo -->
+          <div class="modal-body bg-light" style="max-height: 70vh; overflow-y: auto;">
+
+            <!-- Campo Descripción -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold text-secondary">Descripción del Producto</label>
+              <input type="text" class="form-control" name="descripcion"
+                     [(ngModel)]="skuFormulario.descripcion" required #desc="ngModel"
+                     [class.is-invalid]="desc.invalid && (desc.touched || skuForm.submitted)">
+              <div class="invalid-feedback">
+                La descripción es requerida para Identificar el SKU.
+              </div>
+            </div>
+
+            <!-- Selector de Categoría -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold text-secondary">Categoría Relacionada</label>
+              <select class="form-select" name="categoria"
+                      [(ngModel)]="skuFormulario.categoria" required #cat="ngModel"
+                      [class.is-invalid]="cat.invalid && (cat.touched || skuForm.submitted)">
+                <option [ngValue]="null" disabled>Seleccione una categoría de SQLite</option>
+                @for (catItem of listaCategorias(); track catItem.catId) {
+                <option [ngValue]="catItem">{{ catItem.categoria }}</option>
+                }
+              </select>
+              <div class="invalid-feedback">
+                Debe asociar este producto a una categoría contable.
+              </div>
+            </div>
+
+            <!-- Fila: Marca y Costo -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary">Marca</label>
+                <input type="text" class="form-control" name="marca"
+                       [(ngModel)]="skuFormulario.marca" required #mar="ngModel"
+                       [class.is-invalid]="mar.invalid && (mar.touched || skuForm.submitted)">
+                <div class="invalid-feedback">
+                  Escriba la marca o 'Genérico'.
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary">Costo Unitario ($)</label>
+                <input type="number" class="form-control" name="costoUnitario"
+                       [(ngModel)]="skuFormulario.costoUnitario" step="0.01" min="0.01" required #costo="ngModel"
+                       [class.is-invalid]="costo.invalid && (costo.touched || skuForm.submitted)">
+                <div class="invalid-feedback">
+                  El costo debe ser mayor a 0.
+                </div>
+              </div>
+            </div>
+
+            <!-- Fila: Presentación, Medida y Empaque -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary">Presentación</label>
+                <input type="number" class="form-control" name="presentacion"
+                       [(ngModel)]="skuFormulario.presentacion" min="0.01" required #pres="ngModel"
+                       [class.is-invalid]="pres.invalid && (pres.touched || skuForm.submitted)">
+                <div class="invalid-feedback">
+                  Mínimo 0.01.
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary">U. Medida</label>
+                <select  class="form-select" [(ngModel)]="skuFormulario.unidadMedida" style="width: auto;" name="unidadMedida"
+                        >
+                  <option [ngValue]="null" disabled>Seleccione una Medida</option>
+                  <option [ngValue]="'Kg'">Kilogramos</option>
+                  <option [ngValue]="'Lt'">Litros</option>
+
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold text-secondary">Empaque (Caja)</label>
+                <input type="number" class="form-control" name="empaque"
+                       [(ngModel)]="skuFormulario.empaque" min="1" required #emp="ngModel"
+                       [class.is-invalid]="emp.invalid && (emp.touched || skuForm.submitted)">
+                <div class="invalid-feedback">
+                  Mínimo 1 unidad.
+                </div>
+              </div>
+            </div>
+
+            <!-- Control de Estado (Radio Buttons) -->
+            <div class="mb-2">
+              <label class="form-label fw-semibold text-secondary d-block">Estado del Registro</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="activo" id="activoSi" [value]="1" [(ngModel)]="skuFormulario.activo">
+                <label class="form-check-label text-success fw-bold" for="activoSi">Habilitado (Activo)</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="activo" id="activoNo" [value]="0" [(ngModel)]="skuFormulario.activo">
+                <label class="form-check-label text-danger fw-bold" for="activoNo">Deshabilitado</label>
+              </div>
+            </div>
+
+          </div> <!-- 👈 ESTE DIV SE HABÍA PERDIDO Y REVENTABA EL COMPILADOR -->
+
+          <!-- Footer del Formulario -->
+          <div class="modal-footer bg-white">
+            <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn fw-bold"
+                    [ngClass]="modoEdicion() ? 'btn-warning text-dark' : 'btn-success text-white'"
+                    [disabled]="skuForm.invalid">
+              <i class="bi bi-cloud-arrow-up-fill me-1"></i>
+              {{ modoEdicion() ? 'Actualizar SKU' : 'Guardar SKU' }}
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+  }
+</div>

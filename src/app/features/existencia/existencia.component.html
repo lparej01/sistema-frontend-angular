@@ -1,0 +1,241 @@
+<div class="container-fluid py-3 animate__animated animate__fadeIn">
+
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Módulo de Existencia</h2>
+      <p class="text-muted small mb-0">Control de existencia</p>
+    </div>
+   <!-- <button (click)="abrirModalCrear()" class="btn btn-primary d-flex align-items-center gap-2 rounded-3 shadow-sm">
+      <i class="bi bi-tag-fill"></i>
+      <span>Nueva Existencia</span>
+    </button>-->
+  </div>
+
+  @if (errorMensaje()) {
+  <div class="alert alert-danger border-0 rounded-3 small shadow-sm mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ errorMensaje() }}
+  </div>
+  }
+
+  <!-- 🔍 Barra de Filtros y Búsqueda -->
+  <!--
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-light">
+    <div class="row align-items-center g-3">
+      <div class="col-12 col-md-4">
+        <label class="form-label fw-semibold text-secondary small mb-1">Buscar por Periodo</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0 text-muted">
+            <i class="bi bi-calendar3"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control border-start-0 shadow-none"
+            placeholder="Ej. 2026-07..."
+            [value]="filtroPeriodo()"
+            (input)="actualizarFiltro($event)"
+          />
+          @if (filtroPeriodo()) {
+          <button class="btn btn-outline-secondary border-start-0" (click)="limpiarFiltro()">
+            <i class="bi bi-x-circle-fill"></i>
+          </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  -->
+  <!-- Tabla Estilizada -->
+  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark text-uppercase" style="font-size: 0.75rem;">
+        <tr>
+          <th class="ps-4 py-3">Sku</th>
+          <th class="ps-4 py-3">Descripcion</th>
+          <th class="ps-4 py-3">Periodo</th>
+          <th class="py-3">InvInic</th>
+          <th class="py-3">Entradas</th>
+          <th class="py-3">Salidas</th>
+          <th class="py-3">Mermas</th>
+          <th class="py-3">InvFinal</th>
+          <th class="text-end pe-4 py-3">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- 🔄 Cambiado a existenciasFiltradas() y vinculada la función trackBySkuPeriodo -->
+        @for (ext of existenciasFiltradas(); track trackBySkuPeriodo($index, ext)) {
+        <tr>
+          <td class="ps-4 fw-bold text-secondary">{{ext.sku}}</td>
+          <td class="ps-4 fw-bold text-secondary">{{ext.descripcion}}</td>
+          <td class="ps-4 fw-bold text-secondary">{{ext.periodo}}</td>
+          <td class="fw-semibold text-dark">{{ext.invInicial}}</td>
+          <td class="text-success fw-semibold">{{ext.entradas }}</td>
+          <td class="text-primary fw-bold">{{ext.salidas}}</td>
+          <td>{{ext.merma}}</td>
+          <td>{{ext.invFinal}}</td>
+
+          <td class="text-end pe-4">
+            <div class="d-inline-flex gap-2">
+              <button (click)="abrirModalEditar(ext)" class="btn btn-sm btn-outline-warning border-0" title="Editar Categoría"><i class="bi bi-pencil-square fs-5"></i></button>
+
+             <!-- @if (authService.currentRole() === 'ADMIN_ROLE') {
+              <button (click)="onEliminar(ext.sku!)" class="btn btn-sm btn-outline-danger border-0" title="Eliminar de SQLite"><i class="bi bi-trash3-fill fs-5"></i></button>
+              }-->
+            </div>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="9" class="text-center py-4 text-muted small">
+            @if (cargando()) {
+            <!-- 🌀 Mientras espera el backend, muestra un spinner en lugar del texto feo -->
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+            <span>Cargando existencias desde el servidor...</span>
+            } @else {
+            <!-- 🚫 Si ya cargó y de verdad está vacía, muestra el texto original -->
+            <span>No se encontraron existencias registradas en la base de datos.</span>
+            }
+          </td>
+        </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 📋 MODAL FLOTANTE (CREAR / EDITAR EXISTENCIA) -->
+<div class="modal fade" [class.show]="mostrarModal()" [style.display]="mostrarModal() ? 'block' : 'none'" tabindex="-1" style="background: rgba(0,0,0,0.5)">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold">
+          {{ modoEdicion() ? 'Editar Existencia' : 'Nueva Existencia' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="cerrarModal()" [disabled]="cargando()"></button>
+      </div>
+
+      <div class="modal-body p-4">
+
+        @if (errorMensaje()) {
+        <div class="alert alert-danger d-flex align-items-center mb-3 small fw-semibold" role="alert">
+          <i class="bi bi-exclamation-octagon-fill me-2"></i>
+          <div>{{ errorMensaje() }}</div>
+        </div>
+        }
+
+        <form #miFormulario="ngForm" (ngSubmit)="guardarFormulario(miFormulario)" novalidate>
+
+          <!-- Input Sku (🛑 DESACTIVADO) -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-secondary small">Sku</label>
+            <input
+              type="text"
+              name="sku"
+              [(ngModel)]="existenciaFormulario.sku"
+              #inputExt="ngModel"
+              disabled
+              class="form-control bg-light"
+            />
+          </div>
+
+          <!-- Input Periodo (🛑 DESACTIVADO) -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold text-secondary small">Periodo</label>
+            <input
+              type="text"
+              name="periodo"
+              [(ngModel)]="existenciaFormulario.periodo"
+              #inputPer="ngModel"
+              disabled
+              class="form-control bg-light"
+            />
+          </div>
+
+          <!-- Fila: Costo Unitario e Inventario Inicial / Entradas -->
+          <div class="row mb-3">
+            <!-- Costo Unitario (🛑 DESACTIVADO) -->
+            <div class="col-6">
+              <label class="form-label fw-semibold text-secondary small">Costo Unitario</label>
+              <input
+                type="number"
+                name="invInicial"
+                [(ngModel)]="existenciaFormulario.invInicial"
+                #inputInventario="ngModel"
+                disabled
+                class="form-control bg-light"
+              />
+            </div>
+
+            <!-- Entradas (🛑 DESACTIVADO) -->
+            <div class="col-6">
+              <label class="form-label fw-semibold text-secondary small">Entradas</label>
+              <input
+                type="number"
+                name="entradas"
+                [(ngModel)]="existenciaFormulario.entradas"
+                #inputEntradas="ngModel"
+                disabled
+                class="form-control bg-light"
+              />
+            </div>
+          </div>
+
+          <!-- Fila: Salidas y Merma -->
+          <div class="row mb-4">
+            <!-- Peso - Volumen / Salidas (🛑 DESACTIVADO) -->
+            <div class="col-6">
+              <label class="form-label fw-semibold text-secondary small">Peso - Volumen</label>
+              <input
+                type="number"
+                name="salidas"
+                [(ngModel)]="existenciaFormulario.salidas"
+                #inputSalidas="ngModel"
+                disabled
+                class="form-control bg-light"
+              />
+            </div>
+
+            <!-- Merma (🟢 ACTIVO Y RESALTADO) -->
+            <div class="col-6">
+              <label class="form-label fw-bold text-primary small">Merma</label>
+              <input
+                type="number"
+                name="merma"
+                [(ngModel)]="existenciaFormulario.merma"
+                #inputMerma="ngModel"
+                required
+                min="0"
+                class="form-control border-primary"
+                [class.is-invalid]="inputMerma.invalid && (inputMerma.dirty || inputMerma.touched)"
+                placeholder="0"
+              />
+              @if (inputMerma.invalid && (inputMerma.dirty || inputMerma.touched)) {
+              <div class="invalid-feedback small">La merma debe ser mayor o igual a 0.</div>
+              }
+            </div>
+          </div>
+
+          <!-- Botonera de Control -->
+          <div class="modal-footer px-0 pb-0 pt-3 border-top-0 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary fw-semibold" (click)="cerrarModal()" [disabled]="cargando()">
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm" [disabled]="cargando() || miFormulario.invalid">
+              @if (cargando()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              <span>Guardando...</span>
+              } @else {
+              <span>{{ modoEdicion() ? 'Actualizar' : 'Registrar' }}</span>
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>

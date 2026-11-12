@@ -1,0 +1,113 @@
+<div class="container mt-4">
+
+  <!-- Encabezado y Periodo Actual Destacado -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h2>📅 Gestión de Periodos Contables</h2>
+      <p class="text-muted">Control de ciclos de operación para el inventario de alimentos.</p>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-primary shadow-sm" *ngIf="periodoActual">
+        <div class="card-body text-center py-2">
+          <h6 class="text-primary mb-1">🎯 Periodo Activo</h6>
+          <h4 class="m-0 font-weight-bold">{{ periodoActual.mesNombre }} - {{ periodoActual.anio }}</h4>
+          <small class="text-muted">ID: {{ periodoActual.idPeriodo }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Acciones y Filtros -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <label for="buscarAnio" class="form-label m-0 font-weight-bold">Filtrar por Año:</label>
+        <input
+          type="number"
+          id="buscarAnio"
+          class="form-control d-inline-block style-input"
+          style="width: 140px;"
+          placeholder="Ej: 2026"
+          [(ngModel)]="anioFiltro"
+          (input)="filtrarPorAnio()">
+      </div>
+      <button
+        class="btn btn-success d-flex align-items-center gap-2"
+        [disabled]="cargando"
+
+        (click)="ejecutarApertura()">
+        {{ cargando ? '⏳ Procesando Apertura...' : '➕ Aperturar Nuevo Periodo' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla Histórica de Registros -->
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped m-0 align-middle">
+          <thead class="table-dark">
+          <tr>
+            <th>Código ID</th>
+            <th>Año</th>
+            <th>Mes</th>
+            <th>Nombre del Mes</th>
+            <th class="text-center">Estado del Periodo</th>
+            <th class="text-center">¿Es el Actual?</th>
+            <th>Modificado Por</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr *ngFor="let p of listaPeriodos">
+            <td><strong>{{ p.idPeriodo }}</strong></td>
+            <td>{{ p.anio }}</td>
+            <td>{{ p.mes }}</td>
+            <td>{{ p.mesNombre }}</td>
+
+            <!-- Badge Estado Cerrado (0 o 1) -->
+            <td class="text-center">
+                <span class="badge" [ngClass]="p.esCerrado === 1 ? 'bg-danger' : 'bg-success'">
+                  {{p.esCerrado === 1? '🔴 Cerrado': '🟢 Abierto'}}
+                </span>
+            </td>
+
+            <!-- Badge Estado Actual (0 o 1) -->
+            <td class="text-center">
+                <span class="badge" [ngClass]="p.esActual === 1 ? 'bg-primary' : 'bg-secondary'">
+                  {{p.esActual === 1? '⭐ Actual': 'Histórico' }}
+                </span>
+            </td>
+
+            <td>
+              <small class="d-block text-truncate" style="max-width: 120px;" [title]="p.usuario">
+                👤 {{ p.usuario }}
+              </small>
+              <small class="text-muted d-block text-xs">{{ p.timestamp }}</small>
+            </td>
+
+            <td class="text-center">
+              <div class="btn-group btn-group-sm">
+                <button
+                  class="btn btn-outline-warning"
+                  [title]="p.esCerrado === 1 ? 'Abrir Periodo' : 'Cerrar Periodo'"
+                  (click)="alternarEstadoCierre(p)">
+                  🔄
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Estado de Carga Vaciado -->
+          <tr *ngIf="listaPeriodos.length === 0 && !cargando">
+            <td colspan="8" class="text-center py-4 text-muted">
+              No se encontraron periodos registrados.
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>

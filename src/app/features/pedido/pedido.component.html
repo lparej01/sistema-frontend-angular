@@ -1,0 +1,163 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Gestión de Pedidos</h2>
+    <button class="btn btn-primary d-flex align-items-center gap-2" (click)="abrirModalNuevo()">
+      <i class="bi bi-plus-circle"></i> Nuevo Pedido
+    </button>
+
+  </div>
+
+  <!-- Alerta de advertencia/error -->
+  <div *ngIf="errorMensaje()" class="alert alert-warning alert-dismissible fade show" role="alert">
+    {{ errorMensaje() }}
+    <button type="button" class="btn-close" (click)="errorMensaje.set(null)"></button>
+  </div>
+
+
+  <!-- Tabla de Pedidos -->
+  <div class="table-responsive">
+    <table class="table table-hover table-bordered align-middle">
+      <thead class="table-dark">
+      <tr>
+        <th style="width: 80px;">ID</th>
+        <th>Fecha</th>
+        <th>Proveedor</th>
+        <th>SKU</th>
+        <th class="text-center">Cant.</th>
+        <th class="text-end">Costo Total Final</th>
+        <th>Usuario</th>
+        <th class="text-center" style="width: 150px;">Acciones</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let p of pedidos()">
+        <td><strong>#{{ p.pedidoId }}</strong></td>
+        <td>{{ p.fechaPedido }}</td>
+        <td>{{ p.proveedores?.nombre || 'ALMACÉN' }}</td>
+        <td><span class="badge bg-secondary font-monospace">{{ p.sku?.sku || 'N/A' }}</span></td>
+        <td class="text-center">{{ p.cant }}</td>
+        <td class="text-end fw-bold text-success">
+          {{ (p.costoTotalFlete || p.costoTotal || 0) | currency }}
+        </td>
+        <td><span class="text-muted">{{ p.usuario }}</span></td>
+        <td class="text-center">
+          <div class="btn-group btn-group-sm" role="group">
+            <button (click)="abrirModalEditar(p)" class="btn btn-sm btn-outline-warning border-0" title="Editar Pedido">
+              <i class="bi bi-pencil-square fs-5"></i>
+            </button>
+            <button (click)="eliminarPedido(p)" class="btn btn-sm btn-outline-danger border-0" title="Eliminar Pedido">
+              <i class="bi bi-trash3-fill fs-5"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+      <tr >
+        <td colspan="9" class="text-center py-4 text-muted small">
+        @if (cargando()) {
+        <!-- 🌀 Mientras espera el backend, muestra un spinner en lugar del texto feo -->
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+        <span>Cargando pedidos desde el servidor...</span>
+        }
+        </td>
+      </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Adaptativo (Crear / Editar) -->
+  <div class="modal fade show" [class.d-block]="mostrarModal()" style="background: rgba(0,0,0,0.5);" tabindex="-1" *ngIf="mostrarModal()">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow-lg">
+
+        <div class="modal-header">
+          <h5 class="modal-title">
+            {{ modoEdicion() ? 'Editar Pedido #' + nuevoPedido.pedidoId : 'Registrar Nuevo Pedido' }}
+          </h5>
+          <button type="button" class="btn-close" (click)="mostrarModal.set(false)"></button>
+        </div>
+
+        <div class="modal-body">
+          <form #pedidoForm="ngForm" (ngSubmit)="guardarPedido()">
+
+            <!-- Fecha del Pedido -->
+            <div class="mb-3">
+              <label class="form-label font-weight-bold">Fecha del Pedido *</label>
+              <input type="date" class="form-control" [(ngModel)]="nuevoPedido.fechaPedido" name="fechaPedido" required>
+            </div>
+
+            <!-- Selector de Proveedores -->
+            <div class="mb-3">
+              <label class="form-label font-weight-bold">Proveedor *</label>
+              <select
+                class="form-select"
+                [(ngModel)]="nuevoPedido.proveedores"
+                [compareWith]="compararProveedores"
+                name="proveedores"
+                required>
+                <option [ngValue]="{ provId: 0 }" disabled>Seleccione un proveedor</option>
+                <option *ngFor="let prov of proveedoresList" [ngValue]="prov">
+                  {{ prov.nombre || ('Proveedor #' + prov.provId) }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Selector de SKU-->
+            <div class="mb-3">
+              <label class="form-label font-weight-bold">SKU *</label>
+              <select
+                class="form-select"
+                [(ngModel)]="nuevoPedido.sku"
+                [compareWith]="compararSkus"
+                name="sku"
+                required>
+                <option [ngValue]="{ sku: '' }" disabled>Seleccione un SKU</option>
+                <option *ngFor="let item of skusList" [ngValue]="item">
+                  {{ item.sku }} <ng-container *ngIf="item.descripcion">- {{ item.descripcion }}</ng-container>
+                </option>
+              </select>
+            </div>
+
+            <!-- Cantidad, Costo Unitario y Flete -->
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label font-weight-bold">Cantidad *</label>
+                <input type="number" class="form-control" [(ngModel)]="nuevoPedido.cant" name="cant" (input)="calcularCostos()" min="1" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label font-weight-bold">Costo Unit. *</label>
+                <input type="number" class="form-control" [(ngModel)]="nuevoPedido.costoUnitario" name="costoUnitario" (input)="calcularCostos()" min="0" step="0.01" required>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label font-weight-bold">Flete</label>
+                <input type="number" class="form-control" [(ngModel)]="nuevoPedido.flete" name="flete" (input)="calcularCostos()" min="0" step="0.01">
+              </div>
+            </div>
+
+            <!-- Previsualización de Totales -->
+            <div class="bg-light p-3 rounded mb-3 border">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Costo Base:</span>
+                <span class="fw-bold">{{ (nuevoPedido.costoTotal || 0) | currency }}</span>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span class="text-muted">Costo Final (+ Flete):</span>
+                <span class="fw-bold text-success fs-6">{{ (nuevoPedido.costoTotalFlete || 0) | currency }}</span>
+              </div>
+            </div>
+
+
+
+            <div class="modal-footer px-0 pb-0 pt-3">
+              <button type="button" class="btn btn-secondary" (click)="mostrarModal.set(false)">Cancelar</button>
+              <button type="submit" class="btn btn-success" [disabled]="!pedidoForm.valid">
+                {{ modoEdicion() ? 'Guardar Cambios' : 'Registrar Pedido' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

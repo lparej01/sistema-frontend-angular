@@ -1,0 +1,175 @@
+<div class="container-fluid py-3 animate__animated animate__fadeIn">
+
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark mb-1">Gestión de Usuarios</h2>
+      <p class="text-muted small mb-0">Panel de administración exclusivo para control de cuentas en SQLite</p>
+    </div>
+    <!-- Botón que activa el modo creación -->
+    <button (click)="abrirModalCrear()" class="btn btn-primary d-flex align-items-center gap-2 rounded-3 shadow-sm">
+      <i class="bi bi-person-plus-fill"></i>
+      <span>Nuevo Usuario</span>
+    </button>
+  </div>
+
+  @if (errorMensaje()) {
+  <div class="alert alert-danger border-0 rounded-3 d-flex align-items-center py-2 px-3 mb-4 small shadow-sm">
+    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+    <div>{{ errorMensaje() }}</div>
+  </div>
+  }
+
+  <!-- Tabla de Registros Reales -->
+  <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark text-uppercase" style="font-size: 0.75rem;">
+        <tr>
+          <th class="ps-4 py-3">ID Usuario</th>
+          <th class="py-3">Rol</th>
+          <th class="py-3">Estado</th>
+          <th class="text-end pe-4 py-3">Acciones</th>
+        </tr>
+        </thead>
+        <tbody>
+        @for (user of listaUsuarios(); track user.userId) {
+        <tr>
+          <td class="ps-4 fw-semibold text-dark">
+            <i class="bi bi-person-circle fs-5 text-secondary me-2"></i>{{ user.userId }}
+          </td>
+          <td>
+                <span class="badge" [ngClass]="user.role === 'ADMIN_ROLE' ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle'">
+                  {{ user.role }}
+                </span>
+          </td>
+          <td>
+                <span class="badge" [ngClass]="user.active === 1 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+                  {{ user.active === 1 ? 'Activo' : 'Inactivo' }}
+                </span>
+          </td>
+          <td class="text-end pe-4">
+            <div class="d-inline-flex gap-2">
+              <button (click)="abrirModalEditar(user)" class="btn btn-sm btn-outline-warning border-0" title="Editar privilegios">
+                <i class="bi bi-pencil-square fs-5"></i>
+              </button>
+              <button (click)="onEliminar(user.userId)" class="btn btn-sm btn-outline-danger border-0" [disabled]="user.userId === authService.currentUser()?.userId" title="Eliminar de SQLite">
+                <i class="bi bi-trash3-fill fs-5"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="4" class="text-center py-4 text-muted small">No se encontraron registros de usuarios en SQLite.</td>
+        </tr>
+        }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 📋 MODAL DINÁMICO DE CONTROL (CREAR / EDITAR) -->
+@if (mostrarModal()) {
+<div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+
+      <div class="modal-header bg-dark text-white rounded-top-4 py-3">
+        <h5 class="modal-title fw-bold fs-5">
+          {{ modoEdicion() ? 'Modificar Privilegios' : 'Registrar Nuevo Usuario' }}
+        </h5>
+        <button (click)="cerrarModal()" type="button" class="btn-close btn-close-white" aria-label="Close"></button>
+      </div>
+
+      <form (ngSubmit)="guardarFormulario()" #userForm="ngForm" novalidate>
+        <div class="modal-body p-4">
+
+          <!-- Campo ID Usuario -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">ID Usuario (userId)</label>
+            <input
+              type="text"
+              name="userId"
+              class="form-control rounded-3"
+              [(ngModel)]="usuarioFormulario.userId"
+              [disabled]="modoEdicion()"
+              required
+              placeholder="Ej. lparejo02"
+            >
+          </div>
+          <!-- 🆕 CAMPO: NOMBRE DE LA PERSONA (firstName) -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Nombre de la persona</label>
+            <input
+              type="text"
+              name="firstName"
+              class="form-control rounded-3"
+              [(ngModel)]="usuarioFormulario.firstName"
+              required
+              placeholder="Ej. Luis"
+            >
+          </div>
+
+          <!-- 🆕 CAMPO: APELLIDO DE LA PERSONA (lastName) -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Apellido de la persona</label>
+            <input
+              type="text"
+              name="lastName"
+              class="form-control rounded-3"
+              [(ngModel)]="usuarioFormulario.lastName"
+              required
+              placeholder="Ej. Parejo"
+            >
+          </div>
+
+          <!-- Campo Contraseña -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">
+              Contraseña {{ modoEdicion() ? '(Dejar en blanco para conservar)' : '' }}
+            </label>
+            <input
+              type="password"
+              name="password"
+              class="form-control rounded-3"
+              [(ngModel)]="usuarioFormulario.password"
+              [required]="!modoEdicion()"
+              placeholder="••••••••"
+            >
+          </div>
+
+          <!-- Campo Rol -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Rol asignado</label>
+            <select name="role" class="form-select rounded-3" [(ngModel)]="usuarioFormulario.role" required>
+              <option value="USER_ROLE">USER_ROLE (Operador)</option>
+              <option value="ADMIN_ROLE">ADMIN_ROLE (Administrador)</option>
+            </select>
+          </div>
+
+          <!-- Campo Estado Activo -->
+          <div class="mb-2">
+            <label class="form-label small fw-bold text-secondary">Estado de cuenta</label>
+            <select name="active" class="form-select rounded-3" [(ngModel)]="usuarioFormulario.active" required>
+              <option [ngValue]="1">Activo (Permitir acceso)</option>
+              <option [ngValue]="0">Inactivo (Bloquear acceso)</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="modal-footer bg-light p-3 rounded-bottom-4 justify-content-end gap-2">
+          <button (click)="cerrarModal()" type="button" class="btn btn-sm btn-outline-secondary px-3 rounded-3">Cancelar</button>
+          <button type="submit" class="btn btn-sm btn-primary px-4 rounded-3" [disabled]="userForm.invalid">
+            <i class="bi bi-cloud-arrow-up-fill me-1"></i> Guardar Cambios
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+}
+

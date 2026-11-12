@@ -1,0 +1,185 @@
+<!-- 🚨 CASO 1: EL USUARIO NO ESTÁ AUTENTICADO (Pantalla Completa para el Login) -->
+@if (!isAuthenticated()) {
+
+<main>
+  <router-outlet></router-outlet>
+</main>
+
+} @else {
+<!-- 🎯 CASO 2: EL USUARIO SÍ ESTÁ AUTENTICADO (Estructura de Dashboard Completa) -->
+<div class="d-flex vh-100 overflow-hidden">
+
+  <!-- BARRA LATERAL (Sidebar de Bootstrap 5) -->
+  <div class="bg-dark text-white p-3 d-flex flex-column justify-content-between" style="width: 250px; min-width: 250px;">
+    <div>
+      <a routerLink="/inicio" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none gap-2">
+        <i class="bi bi-cpu-fill fs-4 text-primary"></i>
+        <span class="fs-5 fw-bold">Panel Control</span>
+      </a>
+      <hr>
+      <ul class="nav nav-pills flex-column mb-auto gap-1">
+
+        <!-- Inicio -->
+        <li class="nav-item">
+          <a routerLink="/inicio" routerLinkActive="active" class="nav-link text-white d-flex align-items-center gap-2">
+            <i class="bi bi-house-door-fill"></i>
+            <span>Inicio</span>
+          </a>
+        </li>
+
+        <!-- Separador Visual -->
+        <hr class="text-secondary my-2">
+
+        <!-- 📂 MENÚ DESPLEGABLE: REGISTRO -->
+        <li class="nav-item">
+          <button
+            class="btn btn-toggle d-flex align-items-center justify-content-between text-white w-100 px-3 py-2 text-start rounded border-0 gap-2"
+            data-bs-toggle="collapse"
+            data-bs-target="#menu-registro"
+            aria-expanded="true"
+          >
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-folder-fill text-primary"></i>
+              <span>Registro</span>
+            </div>
+            <i class="bi bi-chevron-down small icon-flecha"></i>
+          </button>
+
+          <!-- Contenedor Colapsable Abierto por Defecto -->
+          <div class="collapse show" id="menu-registro">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ps-4 ms-2 d-flex flex-column gap-1 mt-1 border-start border-secondary border-opacity-25">
+              <li>
+                <a routerLink="/categorias" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-clipboard-data text-warning"></i> Categoria
+                </a>
+              </li>
+
+              <li>
+                <a routerLink="/sku" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-clipboard2-check-fill text-warning"></i> Sku
+                </a>
+              </li>
+
+              <li>
+                <a routerLink="/proveedores" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-truck text-warning"></i> Proveedores
+                </a>
+              </li>
+
+              <li>
+                <a routerLink="/periodo" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-calendar-range-fill text-warning"></i> Periodos
+                </a>
+              </li>
+
+              <!-- 🚨 CONTROL DE ACCESO INTERNO: Usuarios (Anidado y protegido por ADMIN_ROLE) -->
+              @if (authService.currentRole() === 'ADMIN_ROLE') {
+              <li>
+                <a routerLink="/usuarios" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-people-fill text-warning"></i>
+                  <span class="fw-semibold">Usuarios</span>
+                </a>
+              </li>
+              }
+            </ul>
+          </div>
+        </li>
+
+        <!-- 📂 MENÚ DESPLEGABLE: Transacciones -->
+        <li class="nav-item">
+          <button
+            class="btn btn-toggle d-flex align-items-center justify-content-between text-white w-100 px-3 py-2 text-start rounded border-0 gap-2"
+            data-bs-toggle="collapse"
+            data-bs-target="#menu-transacciones"
+            aria-expanded="true"
+          >
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-folder-fill text-primary"></i>
+              <span>Transacciones</span>
+            </div>
+            <i class="bi bi-chevron-down small icon-flecha"></i>
+          </button>
+
+          <!-- Contenedor Colapsable Abierto por Defecto -->
+          <div class="collapse show" id="menu-transacciones">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ps-4 ms-2 d-flex flex-column gap-1 mt-1 border-start border-secondary border-opacity-25">
+              <li>
+                <a routerLink="/existencia" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-clipboard-data text-warning"></i> Control de existencia Contable
+                </a>
+              </li>
+
+              <li>
+                <a routerLink="/pedido" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-clipboard2-check-fill text-warning"></i> Ingresos de Pedidos
+                </a>
+              </li>
+
+              <li>
+                <a routerLink="/despacho" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-truck text-warning"></i> Solicitud de Despacho
+                </a>
+              </li>
+
+              <li>
+                <a routerLink="/inventario" routerLinkActive="active-sub" class="link-light d-flex align-items-center gap-2 py-1 rounded text-decoration-none opacity-75 text-white">
+                  <i class="bi bi-calendar-range-fill text-warning"></i> Movimiento de inventario
+                </a>
+              </li>
+            </ul>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+
+    <!-- Información del Usuario en Sesión (Signals en Tiempo Real) -->
+    <div class="dropdown border-top pt-3">
+      <div class="d-flex align-items-center justify-content-between text-white text-decoration-none">
+        <div class="d-flex align-items-center gap-2">
+          <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; text-transform: uppercase;">
+            {{ authService.currentUser()?.userId?.charAt(0) }}
+          </div>
+          <div class="lh-sm">
+            <div class="fw-semibold small text-truncate" style="max-width: 120px;">
+              {{ authService.currentUser()?.userId }}
+            </div>
+            <span class="badge bg-secondary p-1" style="font-size: 0.65rem;">
+              {{ authService.currentRole()?.replace('_ROLE', '') }}
+            </span>
+          </div>
+        </div>
+        <button (click)="onLogout()" class="btn btn-sm btn-outline-danger border-0" title="Cerrar Sesión">
+          <i class="bi bi-box-arrow-right fs-5"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL (Barra superior + Contenido dinámico) -->
+  <div class="d-flex flex-column flex-grow-1 bg-light overflow-auto">
+
+    <!-- BARRA SUPERIOR (Navbar con Buscador) -->
+    <header class="navbar navbar-expand bg-white shadow-sm px-4 py-2">
+      <div class="container-fluid p-0">
+        <div class="d-flex align-items-center gap-3 w-50">
+          <i class="bi bi-search text-muted"></i>
+          <input class="form-control form-control-sm border-0 bg-light rounded-pill px-3" type="search" placeholder="Buscar en el sistema..." aria-label="Search">
+        </div>
+        <div class="ms-auto d-flex align-items-center gap-3">
+          <span class="text-muted small d-none d-sm-inline">Sesión Segura activada</span>
+          <i class="bi bi-shield-check-fill text-success fs-4"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- ÁREA DE CONTENIDO -->
+    <main class="p-4 flex-grow-1">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+
+</div>
+}
+
